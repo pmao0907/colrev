@@ -83,30 +83,17 @@ class OSFApiQuery:
         data = self.queryAPI(ret)
         formattedData = json.loads(data)
         return formattedData
-
-    def buildQuery(self, filters=None) -> str:
+        
+    def buildQuery(self, filters = None) -> str:
         """Creates the URL for the non-Open Access Document API call
         return string: full URL for querying the API"""
-        url = self.base_url
 
-        url += "?apikey=" + str(self.api_key)
+        url = f"{self.base_url}?apikey={self.api_key}"
 
-        # add in search criteria
-        # title
-        if self.usingTitle:
-            url += "[title]=" + str(self.params["title"])
-
-        # description
-        if self.usingDescription:
-            url += "[description]=" + str(self.params["desciption"])
-
-        # tags
-        if self.usingDescription:
-            url += "[description]=" + str(self.params["desciption"])
-
-        # else:
-        #     for key, value in self.params.items():
-        #         url += "&" + key + "=" + urllib.parse.quote(value)
+        if filters:
+            for key, value in filters.items():
+                # Here, we need to ensure that values are URL-encoded properly
+                url += f"&{key}={urllib.parse.quote(str(value))}"
 
         return url
 
