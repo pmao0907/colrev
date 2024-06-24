@@ -12,22 +12,22 @@ from dataclasses_jsonschema import JsonSchemaMixin
 import colrev.loader.load_utils
 import colrev.ops.load
 import colrev.ops.prep
+import colrev.ops.search
 import colrev.ops.search_api_feed
 import colrev.package_manager.interfaces
 import colrev.package_manager.package_manager
 import colrev.package_manager.package_settings
 import colrev.packages.osf.src.osf_api
+import colrev.process
 import colrev.record.record
 import colrev.record.record_prep
 import colrev.review_manager
+import colrev.settings
 from colrev.constants import ENTRYTYPES
 from colrev.constants import Fields
 from colrev.constants import SearchSourceHeuristicStatus
 from colrev.constants import SearchType
 from colrev.packages.osf.src.osf_api import OSFApiQuery
-import colrev.settings
-import colrev.process
-import colrev.ops.search
 
 # pylint: disable=unused-argument
 # pylint: disable=duplicate-code
@@ -41,7 +41,7 @@ class OSFSearchSource(JsonSchemaMixin):
     flag = True
     settings_class = colrev.package_manager.package_settings.DefaultSourceSettings
 
-    source_identifier = Fields.ID
+    source_identifier = "id"
     search_types = [SearchType.API]
     endpoint = "colrev.osf"
 
@@ -96,7 +96,7 @@ class OSFSearchSource(JsonSchemaMixin):
         cls, operation: colrev.ops.search.Search, params: dict = None
     ) -> colrev.settings.SearchSource:
         """Add SearchSource as an endpoint (based on query provided to colrev search -a)"""
-
+        input(params)
         params_dict = {}
         if params:
             if isinstance(params, str) and params.startswith("http"):
@@ -150,7 +150,8 @@ class OSFSearchSource(JsonSchemaMixin):
             )
         else:
             raise NotImplementedError("Unsupported search type.")
-
+        input(search_parameters)
+        input("stop")
         # Adding the source and performing the search
         operation.add_source_and_search(search_source)
         return search_source
@@ -226,6 +227,8 @@ class OSFSearchSource(JsonSchemaMixin):
             if key in parameter_methods:
                 method = parameter_methods[key]
                 method(value)
+        # TODO - query.params should have a "title" field
+        input(query.params)
 
         # response = query.callAPI()
         return query
@@ -237,17 +240,20 @@ class OSFSearchSource(JsonSchemaMixin):
         query.startRecord = 1
         response = query.callAPI()
         print(response)
-        while 'data' in response:
-            articles = response['data']
 
-            for id in articles:
+        while "data" in response:
+            articles = response["data"]
 
-                record_dict = self._create_record_dict(id)
-                record = colrev.record.record.Record(record_dict)
+            for article in articles:
+                if "id" in article:
+                    record_dict = self._create_record_dict(article)
+                    record = colrev.record.record.Record(record_dict)
+                    osf_feed.add_update_record(record)
+                else:
+                    print("ID not found in article:", article)
 
-                osf_feed.add_update_record(record)
+            query.startRecord += len(articles)
 
-            query.startRecord += 200
             response = query.callAPI()
 
         osf_feed.save()

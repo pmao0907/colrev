@@ -4,7 +4,6 @@ import urllib.parse
 import urllib.request
 
 
-
 class OSFApiQuery:
 
     def __init__(self, api_key: str):
@@ -80,6 +79,7 @@ class OSFApiQuery:
 
     def callAPI(self):
         ret = self.buildQuery()
+        input(ret)
         data = self.queryAPI(ret)
         formattedData = json.loads(data)
         return formattedData
