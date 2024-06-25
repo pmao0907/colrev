@@ -125,10 +125,10 @@ class OSFSearchSource(JsonSchemaMixin):
             # Check for params being empty and initialize if needed
             if len(params_dict) == 0:
                 search_source = operation.create_api_source(endpoint=cls.endpoint)
-            elif "https://api.osf.io/v2/nodes/" in params_dict.get("url", ""):
+            elif "https://api.osf.io/v2/nodes/?" in params_dict.get("url", ""):
                 query = (
                     params_dict["url"]
-                    .replace("https://api.osf.io/v2/nodes/", "")
+                    .replace("https://api.osf.io/v2/nodes/?", "")
                     .lstrip("&")
                 )
                 parameter_pairs = query.split("&")
@@ -136,14 +136,7 @@ class OSFSearchSource(JsonSchemaMixin):
                     key: value
                     for key, value in (pair.split("=") for pair in parameter_pairs)
                 }
-                search_parameters = {
-                    key: value
-                    for key, value in (pair.split("=") for pair in parameter_pairs)
-                }
                 last_value = list(search_parameters.values())[-1]
-                filename = operation.get_unique_filename(
-                    file_path_string=f"osf_{last_value}"
-                )
                 filename = operation.get_unique_filename(
                     file_path_string=f"osf_{last_value}"
                 )
@@ -157,7 +150,6 @@ class OSFSearchSource(JsonSchemaMixin):
         else:
             raise NotImplementedError("Unsupported search type.")
         input(search_parameters)
-        # Adding the source and performing the search
         operation.add_source_and_search(search_source)
         return search_source
 

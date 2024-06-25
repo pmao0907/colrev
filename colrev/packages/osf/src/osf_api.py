@@ -96,18 +96,37 @@ class OSFApiQuery:
         formattedData = json.loads(data)
         return formattedData
 
+    # def buildQuery(self) -> str:
+    #     """Creates the URL for querying the API with support for nested filter parameters."""
+    #     # Initialize the URL with the base endpoint
+    #     url = f"{self.base_url}/?"
+
+    #     # Add in filters with the correct formatting
+    #     for key, value in self.params.items():
+    #         url += key + "=" + urllib.parse.quote(value) + "&"
+
+    #     url += f"apikey={self.api_key}"
+    #     return url
+
     def buildQuery(self) -> str:
-        """Creates the URL for querying the API with support for nested filter parameters."""
-        # Initialize the URL with the base endpoint
-        url = f"{self.base_url}/?"
+        """Creates the URL for querying the API with support for nested and multiple filter parameters."""
+        # Start by constructing the base URL
+        query_parts = [f"{self.base_url}/?"]
 
-        # Add in filters with the correct formatting
+        # Iterate over all parameters to construct the query string
         for key, value in self.params.items():
-            url += key + "=" + urllib.parse.quote(value) + "&"
+            # Check if the parameter value is a list (for multiple values with the same key)
+            if isinstance(value, list):
+                for v in value:
+                    query_parts.append(f"{key}={urllib.parse.quote(str(v))}&")
+            else:
+                query_parts.append(f"{key}={urllib.parse.quote(str(value))}&")
 
-        url += f"apikey={self.api_key}"
-        return url
-
+        # Append the API key at the end of the query
+        query_parts.append(f"apikey={self.api_key}")
+        
+        # Join all parts of the query and remove the last unnecessary '&'
+        return ''.join(query_parts).rstrip('&')
 
     def queryAPI(self, url: str) -> str:
         """Creates the URL for the API call
