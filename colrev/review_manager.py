@@ -15,6 +15,7 @@ import requests_cache
 import yaml
 
 import colrev.dataset
+import colrev.env
 import colrev.exceptions as colrev_exceptions
 import colrev.logger
 import colrev.ops.check
@@ -59,8 +60,6 @@ class ReviewManager:
         exact_call: str = "",
         skip_upgrade: bool = True,
     ) -> None:
-        
-        
 
         self.force_mode = force_mode
         """Force mode variable (bool)"""
