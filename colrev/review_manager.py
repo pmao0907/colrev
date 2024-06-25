@@ -25,7 +25,6 @@ import colrev.settings
 from colrev.constants import Colors
 from colrev.constants import Filepaths
 from colrev.constants import OperationsType
-import colrev.env
 
 
 class ReviewManager:

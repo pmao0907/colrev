@@ -1,10 +1,12 @@
 # osf_api.py
 
+import math
 import requests
 import json
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from urllib.parse import quote, urlencode
 
 class OSFApiQuery:
     def __init__(self, api_key: str):
@@ -12,13 +14,16 @@ class OSFApiQuery:
         self.base_url = "https://api.osf.io/v2/nodes"
         self.headers = {"Authorization": f"Bearer {self.api_key}"}
         self.params = {}
+        self.filters = {}
         self.queryProvided = False
         self.outputType = "json"
+        self.outputDataFormat = "bib"
         self.usingTitle = False
         self.usingDescription = False
         self.usingTags = False
         self.queryProvided = False
-        
+        self.resultSetMax = 25
+        self.startRecord = 1
 
 
     def dataType(self, data_type: str):
@@ -27,37 +32,42 @@ class OSFApiQuery:
         # self.params["type"] = data_type
 
     def dataFormat(self, data_format: str):
-        self.params["format"] = data_format
+        outputDataFormat = data_format.strip().lower()
+        self.outputDataFormat = outputDataFormat
 
     def maximumResults(self, max_results: int):
-        self.params["page[size]"] = max_results
+        self.resultSetMax = math.ceil(max_results) if (max_results > 0) else 25
+        self.resultSetMax = min(self.resultSetMax, 200)
 
     def id(self, value: str):
-        self.params["filter[id]"] = value
+        self.params['id'] = value
 
     def type(self, value: str):
-        self.params["filter[type]"] = value
+        self.params['type'] = value
 
     def title(self, value: str):
-        self.addParameter("title", value)
+        self.params['title'] = value
 
     def category(self, value: str):
-        self.params["filter[category]"] = value
+        self.params['category'] = value
 
     def year(self, value: str):
-        self.params["filter[year]"] = value
+        self.params['year'] = value
 
     def ia_url(self, value: str):
-        self.params["filter[ia_url]"] = value
+        self.params['ia_url'] = value
     
     def description(self, value: str):
-        self.addParameter("description", value)
+        self.params['description'] = value
     
     def tags(self, value:str):
-        self.addParameter("tags", value)
+        self.params['tags'] = value
 
     def date_created(self, value:str):
-        self.params["filter[date_created]"] = value
+        self.params['date_created'] = value
+
+    def set_parameter(self, key, value):
+        self.params[f'filter[{key}]'] = value
 
     def addParameter(self, parameter: str, value: str) -> None:
         """Add parameter"""
@@ -81,44 +91,29 @@ class OSFApiQuery:
 
     def callAPI(self):
         ret = self.buildQuery()
+        input(ret)
         data = self.queryAPI(ret)
         formattedData = json.loads(data)
         return formattedData
 
+    def buildQuery(self) -> str:
+        """Creates the URL for querying the API with support for nested filter parameters."""
+        # Initialize the URL with the base endpoint
+        url = f"{self.base_url}/?"
 
+        # Add in filters with the correct formatting
+        for key, value in self.params.items():
+            url += key + "=" + urllib.parse.quote(value) + "&"
 
-    def buildQuery(self, filters = None) -> str:
-        """Creates the URL for the non-Open Access Document API call
-        return string: full URL for querying the API"""
-        url = self.base_url
-
-        url += "?apikey=" + str(self.api_key)
-
-        # add in search criteria
-        # title
-        if self.usingTitle:
-            url += "[title]=" + str(self.params["title"])
-
-        # description
-        if self.usingDescription:
-            url += "[description]=" + str(self.params["desciption"])
-
-        # tags
-        if self.usingDescription:
-            url += "[description]=" + str(self.params["desciption"])
-
-        # else:
-        #     for key, value in self.params.items():
-        #         url += "&" + key + "=" + urllib.parse.quote(value)
-
+        url += f"apikey={self.api_key}"
         return url
-    
-    
+
+
     def queryAPI(self, url: str) -> str:
         """Creates the URL for the API call
         string url  Full URL to pass to API
         return string: Results from API"""
         with urllib.request.urlopen(url) as con:
             content = con.read()
-        return content.decode('utf-8')
+        return content.decode("utf-8")
 
